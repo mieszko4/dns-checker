@@ -1,13 +1,30 @@
 {
-  "interval": 300000,
+  "ipRangesUrl": "https://ip-ranges.amazonaws.com/ip-ranges.json",
+  "interval": 1800000,
   "domains": [
-    "dikxzq7nkfxdu.cloudfront.net",
-    "d1wgq59qm2vgwl.cloudfront.net",
-    "www-us.ivyspace.com"
+    {
+      "name": "www-us.ivyspace.com",
+      "description": "Main node (www.ivyspace.com)",
+      "region": "ap-northeast-1",
+      "service": "AMAZON"
+    },
+    {
+      "name": "dikxzq7nkfxdu.cloudfront.net",
+      "description": "Static assets (cdn.ivyspace.com)",
+      "region": "ap-northeast-1",
+      "service": "CLOUDFRONT"
+    },
+    {
+      "name": "d1wgq59qm2vgwl.cloudfront.net",
+      "description": "Dynamic assets (prod-ivyspace-tests.ivyspace.com)",
+      "region": "ap-northeast-1",
+      "service": "CLOUDFRONT"
+    }
   ],
   "slack": {
     "webhookUri": "",
     "username": "ec2-china",
-    "channel": "#china-test"
+    "stdChannel": "#production_warnings",
+    "errorChannel": "#production_error"
   }
 }

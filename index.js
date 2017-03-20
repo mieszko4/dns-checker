@@ -1,17 +1,19 @@
 const fs = require('fs');
 const Promise = require('bluebird');
 const Slack = require('slack-node');
+const request = Promise.promisify(require('request'), { multiArgs: true });
+const ipRangeCheck = require("ip-range-check");
 
-const lookup = Promise.promisify(require('dns-lookup'));
+const lookup = Promise.promisify(require('dns-lookup')); // only IPv4! TODO
 
 const config = require('./config');
-const storage = {}; // in memory storage
+const ipRanges = {};
 
 slack = new Slack();
 slack.setWebhook(config.slack.webhookUri);
-const sendMessage = (text) => {
+const sendMessage = (text, channel) => {
   slack.webhook({
-    channel: config.slack.channel,
+    channel: channel || config.slack.stdChannel,
     username: config.slack.username,
     text
   }, function(err, response) {
@@ -23,36 +25,48 @@ const sendMessage = (text) => {
   });
 }
 
+const sendErrorMessage = (text) => {
+  sendMessage(text, config.errorChannel);
+}
+
+const isIpValid = (ipRanges, ip, services, regions) => {
+  return ipRanges.some(range =>
+    services.indexOf(range.service) !== -1
+    && regions.indexOf(range.region) !== -1
+    && ipRangeCheck(ip, range.ip_prefix)
+  );
+};
+
 const resolveDns = () => {
-  Promise.map(config.domains, domain => lookup(domain))
-  .then(function(addresses) {
-    const mapping = {};
-    addresses.forEach((address, i) => {
-      const domain = config.domains[i];
-      mapping[domain] = address;
-    });
-
-    // check if any new
-    const newMapping = {};
-    Object.keys(mapping).forEach(domain => {
-      const ip = mapping[domain];
-
-      const storedIps = storage[domain] || [];
-
-      if (storedIps.indexOf(ip) === -1) {
-        storedIps.push(ip);
-        newMapping[domain] = ip;
-        storage[domain] = storedIps;
+  console.log(new Date(), "Running dns-checker");
+  request({ url: config.ipRangesUrl, json: true })
+  .then((response) => {
+    const ipRanges = response[1].prefixes;
+    return ipRanges;
+  })
+  .then((ipRanges) => Promise.map(config.domains, domain => lookup(domain.name)
+      .then((resolvedIp) => ({
+        domain,
+        resolvedIp,
+        valid: isIpValid(ipRanges, resolvedIp, [domain.service], ['GLOBAL', domain.region])
+      }))
+    )
+    .then(function(results) {
+      // send error for invalid IPs
+      const invalids = results.filter(result => !result.valid);
+      if (invalids.length > 0) {
+        const message = `*INVALID IPS*: \`\`\`${JSON.stringify(invalids, null, 2)}\`\`\``;
+        sendErrorMessage(message);
       }
-    });
-
-    if (Object.keys(newMapping).length > 0) {
-      sendMessage(`*NEW IP ADDRESSES*: \`\`\`${JSON.stringify(mapping, null, 2)}\`\`\``);
-    }
-  }).catch((error) => {
+    }).catch((error) => {
+      const message = (error && error.message) || 'Unknown';
+      sendMessage(`*DNS LOOKUP ERROR*:\n${message}`);
+    })
+  ).catch((error) => {
     const message = (error && error.message) || 'Unknown';
-    sendMessage(`*DNS LOOKUP ERROR*:\n${message}`);
+    sendMessage(`*IP RANGES ERROR*:\n${message}`);
   }).finally(() => {
+    console.log(new Date(), "Stopping dns-checker");
     setTimeout(resolveDns, config.interval);
   });
 };
