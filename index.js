@@ -25,7 +25,7 @@ const sendMessage = (text, channel) => {
 }
 
 const sendErrorMessage = (text) => {
-  sendMessage(text, config.errorChannel);
+  sendMessage(text, config.slack.errorChannel);
 }
 
 const isIpValid = (ipRanges, ip, services, regions) => {
