@@ -34,7 +34,6 @@ const resolveDns = () => {
 
     // check if any new
     const newMapping = {};
-    console.log('ChECKING');
     Object.keys(mapping).forEach(domain => {
       const ip = mapping[domain];
 
@@ -54,7 +53,7 @@ const resolveDns = () => {
     const message = (error && error.message) || 'Unknown';
     sendMessage(`*DNS LOOKUP ERROR*:\n${message}`);
   }).finally(() => {
-    setTimeout(resolveDns, 5000);
+    setTimeout(resolveDns, config.interval);
   });
 };
 
