@@ -1,0 +1,12 @@
+{
+  "domains": [
+    "dikxzq7nkfxdu.cloudfront.net",
+    "d1wgq59qm2vgwl.cloudfront.net",
+    "www-us.ivyspace.com"
+  ],
+  "slack": {
+    "webhookUri": "",
+    "username": "ec2-china",
+    "channel": "#china-test"
+  }
+}
