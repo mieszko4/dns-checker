@@ -10,7 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.5.0",
-    "dns-lookup": "^0.1.0",
     "ip-range-check": "0.0.2",
     "request": "^2.81.0",
     "slack-node": "^0.1.8"

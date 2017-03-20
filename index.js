@@ -1,10 +1,9 @@
 const fs = require('fs');
 const Promise = require('bluebird');
 const Slack = require('slack-node');
+const lookup = Promise.promisify(require('dns').lookup);
 const request = Promise.promisify(require('request'), { multiArgs: true });
 const ipRangeCheck = require("ip-range-check");
-
-const lookup = Promise.promisify(require('dns-lookup')); // only IPv4! TODO
 
 const config = require('./config');
 const ipRanges = {};
@@ -44,7 +43,7 @@ const resolveDns = () => {
     const ipRanges = response[1].prefixes;
     return ipRanges;
   })
-  .then((ipRanges) => Promise.map(config.domains, domain => lookup(domain.name)
+  .then((ipRanges) => Promise.map(config.domains, domain => lookup(domain.name, 4)
       .then((resolvedIp) => ({
         domain,
         resolvedIp,
